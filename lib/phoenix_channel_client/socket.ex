@@ -81,12 +81,20 @@ defmodule Phoenix.Channel.Client.Socket do
     }}
   end
 
+  def handle_call({:push, topic, event, payload}, _from, %{socket: nil} = state) do
+    ref = state.ref + 1
+    push = %{topic: topic, event: "phx_error", payload: %{status: state.state}, ref: to_string(ref)}
+
+    {:reply, push, %{state | ref: ref}}
+  end
+
   def handle_call({:push, topic, event, payload}, _from, %{socket: socket} = state) do
     #Logger.debug "Socket Push: #{inspect topic}, #{inspect event}, #{inspect payload}"
     #Logger.debug "Socket State: #{inspect state}"
     ref = state.ref + 1
     push = %{topic: topic, event: event, payload: payload, ref: to_string(ref)}
     send(socket, {:send, push})
+
     {:reply, push, %{state | ref: ref}}
   end
 
@@ -114,6 +122,8 @@ defmodule Phoenix.Channel.Client.Socket do
       {:ok, pid} ->
         :erlang.send_after(state.heartbeat_interval, self, :heartbeat)
         state = %{state | socket: pid, state: :connected}
+      {:error, {403, "Forbidden"}} ->
+        state = %{state | state: :forbidden}
       _ ->
         :erlang.send_after(@reconnect, self, :connect)
     end

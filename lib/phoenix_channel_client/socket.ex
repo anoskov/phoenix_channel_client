@@ -33,7 +33,7 @@ defmodule Phoenix.Channel.Client.Socket do
 
       def start_link(opts) do
         socket_id = Keyword.get(opts, :socket_id, unquote(__MODULE__))
-        GenServer.start_link(Phoenix.Channel.Client.Socket, {socket_id, opts}, name: socket_id)
+        GenServer.start_link(Phoenix.Channel.Client.Socket, {unquote(__MODULE__), opts}, name: socket_id)
       end
 
       def start_link() do
